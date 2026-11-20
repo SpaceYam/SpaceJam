@@ -36,7 +36,7 @@ const stages = [
     meteorLimit: 5, meteorSpeed: 1.45, sortieStart: 7, sortieInterval: 16,
   },
   {
-    name: "봉쇄 함대 기함", mission: "기함이 굵은 레이저 네 줄을 동시에 쏩니다. 예고선 사이의 빈틈을 찾으세요. 회전하는 방어 구체는 공에 맞으면 8초 동안 사라집니다.",
+    name: "봉쇄 함대 기함", mission: "기함이 매번 다른 위치에 수직 레이저 네 줄을 쏩니다. 예고선 사이의 빈틈을 찾으세요. 회전하는 방어 구체는 공에 맞으면 8초 동안 사라집니다.",
     rows: 7, health: 8, interval: 4.1, warning: 0.85, laserWidth: 46, reward: 0, color: "#dda0f4", layout: "flagship",
     meteorLimit: 5, meteorSpeed: 1.2, sortieStart: 6, sortieInterval: 14, laserCount: 4,
   },
@@ -136,6 +136,7 @@ let fighterHealth;
 let attackClock;
 let targetX;
 let targetY;
+let verticalLaserOrigins;
 let flightTime;
 let relaunchTime;
 let beamTime;
@@ -372,6 +373,7 @@ function resetBoard() {
   attackClock = 0;
   targetX = null;
   targetY = fighterBaseY;
+  verticalLaserOrigins = [];
   flightTime = 0;
   impacts = [];
   comicColorIndex = 0;
@@ -890,18 +892,22 @@ function bounceOffBoss(ball, damage = deck.has("heavy") ? 2 : 1) {
   return true;
 }
 
+function pickVerticalLaserOrigins(count) {
+  const margin = stage.laserWidth / 2 + 16;
+  const spacing = stage.laserWidth + 235;
+  const span = board.width - 2 * margin - spacing * (count - 1);
+  const offsets = Array.from({ length: count }, () => Math.random() * span).sort((a, b) => a - b);
+  return offsets.map((offset, index) => margin + spacing * index + offset);
+}
+
 function laserBeams() {
   if (targetX === null) return [];
-  const count = stage.laserCount ?? 1;
-  const center = boss.x + boss.width / 2;
-  const spacing = board.width * 0.18;
-  const leftCount = Math.min(count - 1, Math.floor(targetX / spacing));
-  return Array.from({ length: count }, (_, index) => {
-    const originX = center + (index - (count - 1) / 2) * 42;
-    const aimX = targetX + (index - leftCount) * spacing;
-    const slope = (aimX - originX) / (targetY - boss.y - boss.height);
-    return { originX, slope };
-  });
+  if (verticalLaserOrigins.length) {
+    return verticalLaserOrigins.map((originX) => ({ originX, slope: 0 }));
+  }
+  const originX = boss.x + boss.width / 2;
+  const slope = (targetX - originX) / (targetY - boss.y - boss.height);
+  return [{ originX, slope }];
 }
 
 function laserXAtY(beam, y) {
@@ -945,6 +951,7 @@ function advanceEnemyAttack() {
   if (targetX === null && attackClock >= stage.interval - stage.warning) {
     targetX = paddle.x + paddle.width / 2;
     targetY = paddle.y;
+    verticalLaserOrigins = stage.laserCount ? pickVerticalLaserOrigins(stage.laserCount) : [];
   }
   if (attackClock >= stage.interval) {
     beamTime = laserDuration;
