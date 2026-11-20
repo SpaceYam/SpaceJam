@@ -33,12 +33,12 @@ const stages = [
   {
     name: "잔해 항로", mission: "네온 블랙홀은 공을 휘게 합니다. 전투기가 중심에 접근하면 빨려 들어갔다가 전장의 반대쪽 아래로 이동합니다.",
     rows: 6, health: 7, interval: 4.8, warning: 0.95, laserWidth: 35, reward: 8, color: "#81e8cc", layout: "debris",
-    meteorLimit: 5, meteorSpeed: 1.45, sortieStart: 7, sortieInterval: 16,
+    meteorLimit: 5, meteorSpeed: 1.45, sortieStart: 7, sortieInterval: 16, gravity: "fixed",
   },
   {
-    name: "봉쇄 함대 기함", mission: "기함이 매번 다른 위치에 수직 레이저 네 줄을 쏩니다. 예고선 사이의 빈틈을 찾으세요. 회전하는 방어 구체는 공에 맞으면 8초 동안 사라집니다.",
+    name: "봉쇄 함대 기함", mission: "움직이는 블랙홀과 수직 레이저 네 줄을 피하세요. 회전 방어 구체는 공에 맞으면 8초 동안 사라집니다.",
     rows: 7, health: 8, interval: 4.1, warning: 0.85, laserWidth: 46, reward: 0, color: "#dda0f4", layout: "flagship",
-    meteorLimit: 5, meteorSpeed: 1.2, sortieStart: 6, sortieInterval: 14, laserCount: 4,
+    meteorLimit: 5, meteorSpeed: 1.2, sortieStart: 6, sortieInterval: 14, laserCount: 4, gravity: "moving",
   },
 ];
 
@@ -87,7 +87,8 @@ const portals = [
   { x: board.width * 0.29, y: 385 },
   { x: board.width * 0.72, y: 535 },
 ];
-const gravityWell = { x: board.width * 0.68, y: 590, radius: 142, captureRadius: 77 };
+const fixedGravityWell = { x: board.width * 0.68, y: 590, radius: 142, captureRadius: 77 };
+const gravityWell = { ...fixedGravityWell };
 const gravityWarpTime = 0.42;
 const fighterWidth = 150;
 const fighterBaseY = board.height - 32;
@@ -381,6 +382,10 @@ function resetBoard() {
   fighterDestroyed = false;
   fighterVortex = null;
   gravityReadyAt = 0;
+  Object.assign(gravityWell, fixedGravityWell);
+  if (stage.gravity === "moving") {
+    Object.assign(gravityWell, movingGravityPosition(0), { radius: 118, captureRadius: 64 });
+  }
   escorts = [];
   escortShots = [];
   nextSortie = stage.sortieStart;
@@ -960,7 +965,16 @@ function advanceEnemyAttack() {
   }
 }
 
+function movingGravityPosition(time) {
+  const phase = time * Math.PI * 2 / 13;
+  return {
+    x: board.width * (0.55 - 0.23 * Math.cos(phase)),
+    y: 586 + 62 * Math.sin(phase) + 15 * Math.sin(phase * 2),
+  };
+}
+
 function advanceStageObstacles() {
+  if (stage.gravity === "moving") Object.assign(gravityWell, movingGravityPosition(flightTime));
   if (stage.layout === "armor") {
     if (!repairDrone && flightTime >= nextRepair) {
       const tile = bricks.find((brick) => brick.active && brick.maxHealth === 2 && brick.health === 1);
@@ -1013,7 +1027,7 @@ function moveThroughStageMechanic(ball) {
     }
   }
 
-  if (stage.layout === "debris") {
+  if (stage.gravity) {
     const dx = gravityWell.x - ball.x;
     const dy = gravityWell.y - ball.y;
     const distance = Math.hypot(dx, dy);
@@ -1058,8 +1072,12 @@ function findGravityExit() {
   const preferred = [0.28, 0.46, 0.12, 0.62, 0.84, 0.94];
   for (const altitude of [0.33, 0.16, 0.04]) {
     const y = fighterBaseY - altitudeRange * altitude;
-    for (const fraction of preferred) {
-      const x = Math.max(halfWidth, Math.min(board.width - halfWidth, board.width * fraction));
+    const beamXs = beams.map((beam) => laserXAtY(beam, y))
+      .filter((x) => x > 0 && x < board.width).sort((a, b) => a - b);
+    const edges = [0, ...beamXs, board.width];
+    const gapCenters = edges.slice(1).map((edge, index) => (edge + edges[index]) / 2);
+    for (const candidate of [...preferred.map((fraction) => board.width * fraction), ...gapCenters]) {
+      const x = Math.max(halfWidth, Math.min(board.width - halfWidth, candidate));
       const near = (objectX, buffer) => Math.abs(objectX - x) <= halfWidth + buffer;
       const passingMeteor = meteors.some((meteor) => {
         const movement = meteor.direction * meteor.speed * (stage.meteorSpeed ?? 1) * 0.28;
@@ -1071,15 +1089,16 @@ function findGravityExit() {
         return time > -0.06 && time < 0.34 && near(shot.x + shot.vx * time, 22);
       });
       const inBeam = beams.some((beam) => near(laserXAtY(beam, y),
-        stage.laserWidth / 2 * Math.hypot(1, beam.slope) + 22));
-      if (!passingMeteor && !passingShot && !inBeam) return { x, y };
+        stage.laserWidth / 2 * Math.hypot(1, beam.slope) + 8));
+      const outsideVortex = Math.hypot(x - gravityWell.x, y - gravityWell.y) > gravityWell.radius + 28;
+      if (!passingMeteor && !passingShot && !inBeam && outsideVortex) return { x, y };
     }
   }
   return { x: board.width * preferred[0], y: fighterBaseY };
 }
 
 function advanceFighterGravity() {
-  if (stage.layout !== "debris" || flightTime < gravityReadyAt) return false;
+  if (!stage.gravity || flightTime < gravityReadyAt) return false;
   if (fighterVortex) {
     const progress = Math.min(1, (flightTime - fighterVortex.started) / gravityWarpTime);
     const radius = fighterVortex.radius * (1 - progress) ** 1.3;
@@ -2075,6 +2094,27 @@ function drawVortexArms(x, y, outer, inner, spin, colors, winding = 5.4) {
 function drawBlackHole() {
   const { x, y, radius } = gravityWell;
   const core = 29;
+  if (stage.gravity === "moving") {
+    context.beginPath();
+    for (let point = 0; point <= 20; point += 1) {
+      const position = movingGravityPosition(flightTime + point * 0.045);
+      if (point === 0) context.moveTo(position.x, position.y);
+      else context.lineTo(position.x, position.y);
+    }
+    context.strokeStyle = "#cba5ff80";
+    context.lineWidth = 2;
+    context.setLineDash([5, 9]);
+    context.stroke();
+    context.setLineDash([]);
+    for (let index = 4; index >= 1; index -= 1) {
+      const previous = movingGravityPosition(Math.max(0, flightTime - index * 0.16));
+      context.strokeStyle = "#9b9af7" + (index > 2 ? "1b" : "32");
+      context.lineWidth = 1.4;
+      context.beginPath();
+      context.arc(previous.x, previous.y, 27 + index * 6, 0, Math.PI * 2);
+      context.stroke();
+    }
+  }
   const field = context.createRadialGradient(x, y, core, x, y, radius);
   field.addColorStop(0, "#14052bf2");
   field.addColorStop(0.32, "#311870a0");
@@ -2166,7 +2206,7 @@ function drawPortals() {
 function drawStageObstacles() {
   context.save();
   if (stage.layout === "split") drawPortals();
-  if (stage.layout === "debris") drawBlackHole();
+  if (stage.gravity) drawBlackHole();
 
   if (repairDrone) {
     const { x, y, targetX, tile } = repairDrone;
