@@ -1,0 +1,512 @@
+* {
+  box-sizing: border-box;
+}
+
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+  color: #f2f5ff;
+  background: #080b16;
+}
+
+body {
+  margin: 0;
+  padding: 12px;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(ellipse at 50% 0, #202143, transparent 68%);
+}
+
+.game {
+  width: 100%;
+  max-width: 960px;
+}
+
+.game-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(20px, 3vw, 30px);
+  line-height: 1.25;
+  letter-spacing: -0.04em;
+}
+
+p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.game-header p {
+  padding: 5px 12px;
+  border: 1px solid #374367;
+  border-radius: 999px;
+  background: #10172b;
+  color: #c5cfea;
+  white-space: nowrap;
+}
+
+#remaining {
+  color: #86eaff;
+  font-variant-numeric: tabular-nums;
+}
+
+.game-area {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 12px;
+  outline: 1px solid #3d486c;
+  background-color: #090e21;
+  background-image:
+    radial-gradient(ellipse at 46% 41%, transparent 37%, #010207bd 100%),
+    radial-gradient(ellipse 58% 14% at 31% 23%, #b4cdf028, transparent 87%),
+    radial-gradient(ellipse 34% 11% at 60% 26%, #b5d2ff10, transparent 95%),
+    radial-gradient(ellipse 68% 30% at 47% 24%, #43356751, transparent 85%),
+    radial-gradient(ellipse 32% 39% at 90% 65%, #1747673e, transparent 88%),
+    radial-gradient(ellipse 51% 37% at 9% 84%, #242c583b, transparent 88%),
+    linear-gradient(155deg, #172039, #080e1c 47%, #030712 94%);
+
+  box-shadow: 0 16px 48px #03061188;
+}
+
+/* 별과 행성은 게임 화면 뒤에 배치한다. */
+.game-area::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 54%;
+  right: 13%;
+  width: 8%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 69% 73%, #020612 5%, transparent 61%),
+    repeating-linear-gradient(158deg, transparent 0 9px, #a6b9df24 10px 12px, transparent 15px 20px),
+    radial-gradient(circle at 23% 19%, #adbbdf, #6e80a7 22%, #3e527b 41%, #10172d 70%, #0a1024 85%);
+  box-shadow: -7px -4px 28px #7b7bf54d, inset 2px 1px 5px #aab6ff80;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.game-message {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  pointer-events: none;
+}
+
+.message-panel {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px 20px;
+  border: 1px solid #7b9ed066;
+  border-radius: 12px;
+  background: #10182fec;
+  color: #e1ecff;
+  box-shadow: 0 8px 28px #03061188;
+  text-align: center;
+  font-size: clamp(12px, 2vw, 15px);
+}
+
+.message-panel[hidden] {
+  display: none;
+}
+
+.game-message strong {
+  color: #fff;
+  font-size: clamp(18px, 3vw, 26px);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  margin-top: 12px;
+  color: #bbc7e4;
+}
+
+kbd {
+  display: inline-block;
+  min-width: 1.6em;
+  padding: 0 5px;
+  border: 1px solid #405074;
+  border-radius: 4px;
+  background: #141e36;
+  color: #e8f0ff;
+  font: inherit;
+  text-align: center;
+}
+
+.space-traffic {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.shooting-star {
+  position: absolute;
+  top: 46%;
+  left: 83%;
+  width: 115px;
+  height: 3px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #eefaff, #9ccfff81 20%, transparent);
+  filter: drop-shadow(0 0 5px #8ec5ff);
+  opacity: 0;
+  animation: star-pass 12s ease-in infinite;
+}
+
+@keyframes star-pass {
+  0%, 26% { transform: translate(0, -30px) rotate(-28deg); opacity: 0; }
+  30% { opacity: 1; }
+  45%, 100% { transform: translate(-320px, 140px) rotate(-28deg); opacity: 0; }
+}
+
+.obstacle-hint {
+  margin-left: auto;
+  color: #f1bd98;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .space-traffic {
+    display: none;
+  }
+}
+.starfield {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+}
+
+.starfield i {
+  position: absolute;
+  border-radius: 50%;
+  background: #d5e9ff;
+  box-shadow: 0 0 4px #b3d4ff80;
+}
+
+@media (max-width: 520px) {
+  .game-header {
+    flex-wrap: wrap;
+  }
+
+  .obstacle-hint {
+    margin-left: 0;
+  }
+}
+
+.health {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #d3dff8;
+  font-size: 12px;
+}
+
+.health label {
+  white-space: nowrap;
+}
+
+.health progress {
+  appearance: none;
+  display: block;
+  min-width: 0;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #242f4b;
+  color: var(--health-end);
+}
+
+.health progress::-webkit-progress-bar {
+  background: #242f4b;
+}
+
+.health progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--health-start), var(--health-end));
+}
+
+.health progress::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--health-start), var(--health-end));
+}
+
+.health-boss {
+  --health-start: #9b375f;
+  --health-end: #ff8672;
+  margin-bottom: 8px;
+}
+
+.health-boss progress {
+  flex: 1;
+  height: 8px;
+}
+
+.health-fighter {
+  --health-start: #298cc7;
+  --health-end: #8af4ef;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.health-fighter progress {
+  width: 102px;
+  height: 5px;
+}
+
+#item-status {
+  color: #a6e9f6;
+  font-size: 12px;
+  text-align: center;
+}
+
+#item-status:empty {
+  display: none;
+}
+
+.game-area {
+  outline-color: #5c729a;
+  box-shadow: 0 0 0 3px #182642, 0 16px 48px #030611a8;
+}
+.starfield .star-warm {
+  background: #fff0cb;
+  box-shadow: 0 0 5px #ffc98c88;
+}
+
+.starfield .star-cool {
+  background: #d0f1ff;
+  box-shadow: 0 0 6px #82d4ff90;
+}
+
+.game-header .stage-label {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #b3c8e6;
+  font-size: 12px;
+  white-space: normal;
+}
+
+.mission-actions, .shop-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.mission-actions {
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.game button {
+  border: 1px solid #587599;
+  border-radius: 7px;
+  padding: 4px 9px;
+  background: #213858;
+  color: #eaf6ff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.game button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.game button:focus-visible {
+  outline: 2px solid #81edff;
+  outline-offset: 2px;
+}
+
+.battle-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.battle-layout {
+  display: grid;
+  gap: 12px;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.shop {
+  max-height: min(570px, 68dvh);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid #627fa8;
+  border-radius: 12px;
+  background: #101a2f;
+  box-shadow: 0 12px 35px #030713a8;
+}
+
+@media (min-width: 780px) {
+  .game:has(.shop:not([hidden])) {
+    max-width: min(1230px, calc((100dvh - 155px) * 1.485714 + 260px));
+  }
+
+  .battle-layout:has(.shop:not([hidden])) {
+    grid-template-columns: minmax(0, 1fr) 248px;
+  }
+}
+
+
+.shop-header {
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.shop h2, .shop h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.shop-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr));
+  gap: 8px;
+}
+
+.shop-cards article {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 8px;
+  border: 1px solid #3a5378;
+  border-radius: 8px;
+  background: #192941;
+}
+
+.shop-cards p, #shop-status {
+  color: #c1d4ed;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+#shop-status {
+  margin-top: 8px;
+}
+
+.equipment {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #a6bedb;
+}
+
+@media (min-width: 740px) and (min-height: 590px) {
+  .game {
+    max-width: min(960px, calc((100dvh - 155px) * 1.485714));
+  }
+}
+
+.shop-group {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+}
+
+.shop-group h3 {
+  margin: 2px 0;
+  color: #b8dcfb;
+  font-size: 13px;
+}
+
+.shop-group h4 {
+  margin: 0;
+  font-size: 14px;
+}
+/* 고리 뒤쪽은 행성 뒤에 가리고, 앞쪽은 원반 위로 겹친다. */
+.ringed-planet {
+  position: absolute;
+  z-index: -1;
+  top: 65%;
+  left: 13%;
+  width: 8.2%;
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+
+.ringed-planet::before,
+.ringed-planet::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 35% -47%;
+  transform: rotate(-19deg);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #4b3e53, 0 0 0 5px #ac8968,
+    0 0 0 6px #483747, 0 0 0 9px #c4a37b87;
+}
+
+.ringed-planet span {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at 72% 66%, #1b1427 4%, transparent 69%),
+    repeating-linear-gradient(160deg, #e6b78d15 0 5%, #5e4a731f 7% 10%, transparent 11% 16%),
+    radial-gradient(circle at 26% 20%, #dbc39e, #aa8070 42%, #604c61 68%, #271d32 88%);
+  box-shadow: -2px -1px 12px #e8a98045;
+}
+
+.ringed-planet::after {
+  z-index: 2;
+  clip-path: inset(53% -12px -12px);
+}
+
+.pause-notice {
+  position: absolute;
+  z-index: 1;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
+  width: max-content;
+  max-width: calc(100% - 22px);
+  padding: 8px 12px;
+  border: 1px solid #7897bb;
+  border-radius: 8px;
+  background: #101c32ee;
+  color: #e8f4ff;
+  font-size: 13px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.battle-layout:has(.shop:not([hidden])) .shooting-star {
+  animation-play-state: paused;
+}
+
+#fighter-health-count,
+#boss-health-count {
+  min-width: 3em;
+  color: #a5e7f3;
+  font-variant-numeric: tabular-nums;
+}
+
+#boss-health-count {
+  color: #ffc69e;
+}

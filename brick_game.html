@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>함대 돌파</title>
+  <link rel="stylesheet" href="brick_game.css">
+  <script src="brick_game.js" defer></script>
+</head>
+<body>
+  <main class="game">
+    <header class="game-header">
+      <div><h1>함대 돌파</h1><p id="stage-label" class="stage-label"></p></div>
+      <div class="battle-actions">
+        <p>남은 보호막 <strong id="remaining">27</strong> · <span id="credits">5</span> 크레딧</p>
+        <button id="toggle-shop" type="button" aria-controls="shop" aria-expanded="false">상점 · 덱</button>
+      </div>
+    </header>
+    <div class="health health-boss">
+      <label for="boss-health">적 모함</label>
+      <progress id="boss-health" max="4" value="4"></progress>
+      <span id="boss-health-count" aria-hidden="true">4 / 4</span>
+    </div>
+    <div class="battle-layout">
+      <div class="game-area">
+        <div class="starfield" aria-hidden="true"></div>
+        <div class="ringed-planet" aria-hidden="true"><span></span></div>
+        <div class="space-traffic" aria-hidden="true">
+          <div class="shooting-star"></div>
+        </div>
+        <canvas id="board" width="1560" height="1050" aria-label="함대 돌파 게임 영역">
+          이 브라우저에서는 게임 화면을 표시할 수 없습니다.
+        </canvas>
+        <div id="pause-notice" class="pause-notice" role="status" hidden>일시정지 · 상점을 닫으면 전투가 이어집니다</div>
+        <div class="game-message" role="status">
+          <div id="message-panel" class="message-panel">
+            <strong id="result" hidden></strong>
+            <span id="prompt">스페이스 키를 눌러 시작하세요</span>
+            <small id="mission-hint"></small>
+            <div class="mission-actions">
+              <button id="launch" type="button">출격</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <section id="shop" class="shop" aria-labelledby="shop-title" hidden>
+        <div class="shop-header">
+          <div><h2 id="shop-title">함선 정비 상점</h2><p><span id="shop-credits">5</span> 크레딧 · 장착 <span id="deck-count">0</span>/2</p></div>
+          <button id="close-shop" type="button">닫기</button>
+        </div>
+        <div id="shop-cards" class="shop-cards"></div>
+        <p id="shop-status" role="status"></p>
+      </section>
+    </div>
+    <div class="health health-fighter">
+      <label for="fighter-health">내 전투기</label>
+      <progress id="fighter-health" max="8" value="8"></progress>
+      <span id="fighter-health-count" aria-hidden="true">8 / 8</span>
+    </div>
+    <div class="controls"><span><kbd>←</kbd> <kbd>→</kbd> 좌우 이동 · <kbd>↑</kbd> <kbd>↓</kbd> 상하 이동</span><span><kbd>스페이스</kbd> 출격 및 재도전</span><span class="obstacle-hint">낙하 아이템을 받으세요 · 운석에 부딪히면 체력 −2</span></div>
+    <div class="equipment"><span id="active-deck">장착 카드 없음</span><span>공 <strong id="ball-count">1</strong>개 · 고도 <strong id="fighter-lane">0.0</strong>/4</span><span id="item-status" role="status"></span></div>
+  </main>
+</body>
+</html>
